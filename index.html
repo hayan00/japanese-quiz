@@ -131,6 +131,15 @@ function shuffle(arr) {
 function setMode(m) {
   mode = m;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  const rg = document.getElementById('reading-group');
+  const mg = document.getElementById('meaning-group');
+  if (rg) rg.style.display = mode === 'reading' ? '' : 'none';
+  if (mg) mg.style.display = mode === 'meaning' ? '' : 'none';
+  document.getElementById('reading-input').value = '';
+  document.getElementById('meaning-input').value = '';
+  document.getElementById('reading-badge').className = 'badge';
+  document.getElementById('meaning-badge').className = 'badge';
+  document.getElementById(mode === 'reading' ? 'reading-input' : 'meaning-input').focus();
 }
 
 function renderQuiz() {
