@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>일본어 단어 퀴즈</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .container { width: 100%; max-width: 480px; }
+    h1 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.3px;
+    }
+    .score-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+    .score-chip {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .score-chip .num { font-size: 22px; font-weight: 500; color: #222; display: block; }
+    .score-chip .lbl { font-size: 12px; color: #999; margin-top: 2px; display: block; }
+    .progress-text {
+      font-size: 13px;
+      color: #aaa;
+      text-align: right;
+      margin-bottom: 6px;
+    }
+    .word-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 16px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .kanji { font-size: 52px; font-weight: 500; color: #111; line-height: 1.2; }
+    .pos { font-size: 13px; color: #bbb; margin-top: 8px; }
+    .input-group { margin-bottom: 12px; }
+    .input-label { font-size: 13px; color: #888; margin-bottom: 6px; display: block; }
+    .input-row { display: flex; gap: 8px; align-items: center; }
+    .input-row input {
+      flex: 1;
+      font-size: 16px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #222;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-row input:focus { border-color: #999; }
+    .input-row input:disabled { background: #fafafa; color: #888; }
+    .badge {
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      visibility: hidden;
+    }
+    .badge.correct { visibility: visible; background: #e8f5e9; color: #2e7d32; }
+    .badge.wrong   { visibility: visible; background: #fdecea; color: #c62828; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 8px;
+    }
+    .btn-check { background: #fff; color: #222; }
+    .btn-check:hover { background: #f5f5f5; }
+    .btn-next { background: #f0f0f0; color: #222; display: none; }
+    .btn-next:hover { background: #e8e8e8; }
+    .answer-reveal {
+      background: #f9f9f9;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #777;
+      display: none;
+      line-height: 1.8;
+    }
+    .answer-reveal span { color: #222; font-weight: 500; }
+    .finish-msg { text-align: center; padding: 2rem 0; }
+    .finish-msg .big { font-size: 42px; margin-bottom: 12px; }
+    .finish-msg .result { font-size: 20px; font-weight: 500; color: #222; margin-bottom: 6px; }
+    .finish-msg .sub { font-size: 14px; color: #999; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>일본어 단어 퀴즈</h1>
+
+  <div class="score-bar">
+    <div class="score-chip"><span class="num" id="sc-correct">0</span><span class="lbl">정답</span></div>
+    <div class="score-chip"><span class="num" id="sc-wrong">0</span><span class="lbl">오답</span></div>
+    <div class="score-chip"><span class="num" id="sc-remain">10</span><span class="lbl">남은 문제</span></div>
+  </div>
+
+  <div id="quiz-area">
+    <div class="progress-text" id="progress-text">1 / 10</div>
+
+    <div class="word-card">
+      <div class="kanji" id="kanji-display"></div>
+      <div class="pos" id="pos-display"></div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="reading-input">읽는 방법 (히라가나)</label>
+      <div class="input-row">
+        <input type="text" id="reading-input" placeholder="예: たべる" autocomplete="off" />
+        <span class="badge" id="reading-badge"></span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="meaning-input">뜻 (한국어)</label>
+      <div class="input-row">
+        <input type="text" id="meaning-input" placeholder="예: 먹다" autocomplete="off" />
+        <span class="badge" id="meaning-badge"></span>
+      </div>
+    </div>
+
+    <button class="btn btn-check" id="btn-check" onclick="checkAnswer()">정답 확인</button>
+    <button class="btn btn-next" id="btn-next" onclick="nextWord()">다음 단어 →</button>
+
+    <div class="answer-reveal" id="answer-reveal"></div>
+  </div>
+
+  <div class="finish-msg" id="finish-area" style="display:none"></div>
+</div>
+
+<script>
+const words = [
+  { kanji: "食べる", reading: "たべる", meanings: ["먹다"], pos: "동사" },
+  { kanji: "飲む", reading: "のむ", meanings: ["마시다"], pos: "동사" },
+  { kanji: "学校", reading: "がっこう", meanings: ["학교"], pos: "명사" },
+  { kanji: "先生", reading: "せんせい", meanings: ["선생님", "선생"], pos: "명사" },
+  { kanji: "友達", reading: "ともだち", meanings: ["친구"], pos: "명사" },
+  { kanji: "大きい", reading: "おおきい", meanings: ["크다", "크"], pos: "형용사" },
+  { kanji: "見る", reading: "みる", meanings: ["보다"], pos: "동사" },
+  { kanji: "時間", reading: "じかん", meanings: ["시간"], pos: "명사" },
+  { kanji: "難しい", reading: "むずかしい", meanings: ["어렵다", "어려운"], pos: "형용사" },
+  { kanji: "話す", reading: "はなす", meanings: ["말하다", "이야기하다"], pos: "동사" },
+];
+
+let order = [], idx = 0, correct = 0, wrong = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function norm(s) { return s.trim().replace(/\s+/g, ''); }
+
+function init() {
+  order = shuffle(words.map((_, i) => i));
+  idx = 0; correct = 0; wrong = 0;
+  document.getElementById('finish-area').style.display = 'none';
+  document.getElementById('quiz-area').style.display = 'block';
+  document.getElementById('reading-input').style.display = '';
+  document.getElementById('meaning-input').style.display = '';
+  document.querySelectorAll('.input-group').forEach(el => el.style.display = '');
+  updateScore();
+  showWord();
+}
+
+function showWord() {
+  const w = words[order[idx]];
+  document.getElementById('kanji-display').textContent = w.kanji;
+  document.getElementById('pos-display').textContent = w.pos;
+  document.getElementById('progress-text').textContent = (idx + 1) + ' / ' + words.length;
+  document.getElementById('reading-input').value = '';
+  document.getElementById('meaning-input').value = '';
+  document.getElementById('reading-input').disabled = false;
+  document.getElementById('meaning-input').disabled = false;
+  setBadge('reading-badge', null);
+  setBadge('meaning-badge', null);
+  document.getElementById('answer-reveal').style.display = 'none';
+  document.getElementById('btn-check').style.display = 'block';
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('reading-input').focus();
+}
+
+function setBadge(id, state) {
+  const el = document.getElementById(id);
+  el.className = 'badge';
+  if (state === 'correct') { el.classList.add('correct'); el.textContent = '✓ 정답'; }
+  else if (state === 'wrong') { el.classList.add('wrong'); el.textContent = '✗ 오답'; }
+}
+
+function updateScore() {
+  document.getElementById('sc-correct').textContent = correct;
+  document.getElementById('sc-wrong').textContent = wrong;
+  document.getElementById('sc-remain').textContent = words.length - idx;
+}
+
+function checkAnswer() {
+  const w = words[order[idx]];
+  const rOk = norm(document.getElementById('reading-input').value) === norm(w.reading);
+  const mOk = w.meanings.some(m => norm(m) === norm(document.getElementById('meaning-input').value));
+  setBadge('reading-badge', rOk ? 'correct' : 'wrong');
+  setBadge('meaning-badge', mOk ? 'correct' : 'wrong');
+  if (rOk && mOk) correct++; else wrong++;
+  updateScore();
+  const reveal = document.getElementById('answer-reveal');
+  reveal.innerHTML = '정답: <span>' + w.reading + '</span> — <span>' + w.meanings[0] + '</span>';
+  reveal.style.display = 'block';
+  document.getElementById('btn-check').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('reading-input').disabled = true;
+  document.getElementById('meaning-input').disabled = true;
+}
+
+function nextWord() {
+  idx++;
+  if (idx >= words.length) {
+    document.getElementById('quiz-area').style.display = 'none';
+    const pct = Math.round(correct / words.length * 100);
+    document.getElementById('finish-area').innerHTML =
+      '<div class="big">' + (pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '📚') + '</div>' +
+      '<div class="result">' + correct + ' / ' + words.length + ' 정답</div>' +
+      '<div class="sub" style="margin-bottom:1.5rem">정답률 ' + pct + '%</div>' +
+      '<button class="btn btn-check" onclick="init()">다시 시작</button>';
+    document.getElementById('finish-area').style.display = 'block';
+    document.getElementById('sc-remain').textContent = 0;
+    return;
+  }
+  showWord();
+}
+
+document.getElementById('reading-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('meaning-input').focus(); });
+document.getElementById('meaning-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
+
+init();
+</script>
+</body>
+</html>
