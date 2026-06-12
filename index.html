@@ -57,8 +57,7 @@
 </div>
 
 <script>
-const SHEET_ID = '1kTsFVtT3rCj7h4vtbbTzs5Is3ik3FKxWRFG2wNEpZfc';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMpct6-lmuwmRJZ-rMAAb11YZb27FMnbETvw2Mg_YaDj4zxgXD7Ksf45w5QNJ29OSsTP1nMehwCE4K/pub?output=csv';
 
 let words = [], order = [], idx = 0, correct = 0, wrong = 0;
 
@@ -69,12 +68,11 @@ function parseCSV(text) {
   const result = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
-    const kanji = cols[1] || '';
-    const reading = cols[2] || '';
-    const meaning = cols[3] || '';
-    const pos = cols[4] || '';
+    const kanji = cols[0] || '';
+    const reading = cols[1] || '';
+    const meaning = cols[2] || '';
     if (kanji && reading && meaning) {
-      result.push({ kanji, reading, meanings: meaning.split('/').map(m => m.trim()), pos });
+      result.push({ kanji, reading, meanings: meaning.split('/').map(m => m.trim()), pos: '' });
     }
   }
   return result;
