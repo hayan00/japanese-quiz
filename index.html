@@ -49,6 +49,11 @@
     .finish-msg .big { font-size: 42px; margin-bottom: 12px; }
     .finish-msg .result { font-size: 20px; font-weight: 500; color: #222; margin-bottom: 6px; }
     .finish-msg .sub { font-size: 14px; color: #999; margin-bottom: 1.5rem; }
+    .mode-select { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+    .mode-btn { flex: 1; padding: 14px; font-size: 15px; font-weight: 500; border-radius: 12px; border: 1.5px solid #e0e0e0; background: #fff; color: #888; cursor: pointer; transition: all 0.15s; }
+    .mode-btn:hover { border-color: #aaa; color: #444; }
+    .mode-btn.active { border-color: #333; color: #222; background: #fff; }
+    .mode-label { font-size: 12px; display: block; margin-top: 4px; font-weight: 400; }
   </style>
 </head>
 <body>
@@ -60,7 +65,7 @@
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMpct6-lmuwmRJZ-rMAAb11YZb27FMnbETvw2Mg_YaDj4zxgXD7Ksf45w5QNJ29OSsTP1nMehwCE4K/pub?output=csv';
 
-let words = [], order = [], idx = 0, correct = 0, wrong = 0;
+let words = [], order = [], idx = 0, correct = 0, wrong = 0, mode = 'reading';
 
 function norm(s) { return s.trim().replace(/\s+/g, ''); }
 
@@ -123,8 +128,21 @@ function shuffle(arr) {
   return a;
 }
 
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+}
+
 function renderQuiz() {
   document.getElementById('app').innerHTML = `
+    <div class="mode-select">
+      <button class="mode-btn${mode === 'reading' ? ' active' : ''}" data-mode="reading" onclick="setMode('reading')">
+        읽기 맞추기<span class="mode-label">히라가나로 입력</span>
+      </button>
+      <button class="mode-btn${mode === 'meaning' ? ' active' : ''}" data-mode="meaning" onclick="setMode('meaning')">
+        뜻 맞추기<span class="mode-label">한국어로 입력</span>
+      </button>
+    </div>
     <div class="score-bar">
       <div class="score-chip"><span class="num" id="sc-correct">0</span><span class="lbl">정답</span></div>
       <div class="score-chip"><span class="num" id="sc-wrong">0</span><span class="lbl">오답</span></div>
@@ -135,14 +153,14 @@ function renderQuiz() {
     <div class="word-card">
       <div class="kanji" id="kanji-display"></div>
     </div>
-    <div class="input-group">
+    <div class="input-group" id="reading-group">
       <label class="input-label" for="reading-input">읽는 방법 (히라가나)</label>
       <div class="input-row">
         <input type="text" id="reading-input" placeholder="히라가나로 입력" autocomplete="off" />
         <span class="badge" id="reading-badge"></span>
       </div>
     </div>
-    <div class="input-group">
+    <div class="input-group" id="meaning-group">
       <label class="input-label" for="meaning-input">뜻 (한국어)</label>
       <div class="input-row">
         <input type="text" id="meaning-input" placeholder="한국어 뜻 입력" autocomplete="off" />
@@ -157,7 +175,7 @@ function renderQuiz() {
   order = shuffle(words.map((_, i) => i));
   idx = 0; correct = 0; wrong = 0;
   showWord();
-  document.getElementById('reading-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('meaning-input').focus(); });
+  document.getElementById('reading-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
   document.getElementById('meaning-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
 }
 
@@ -171,11 +189,13 @@ function showWord() {
   document.getElementById('meaning-input').disabled = false;
   document.getElementById('reading-badge').className = 'badge';
   document.getElementById('meaning-badge').className = 'badge';
+  document.getElementById('reading-group').style.display = mode === 'reading' ? '' : 'none';
+  document.getElementById('meaning-group').style.display = mode === 'meaning' ? '' : 'none';
   document.getElementById('reveal').style.display = 'none';
   document.getElementById('reveal').innerHTML = '';
   document.getElementById('btn-check').style.display = 'block';
   document.getElementById('btn-next').style.display = 'none';
-  document.getElementById('reading-input').focus();
+  document.getElementById(mode === 'reading' ? 'reading-input' : 'meaning-input').focus();
 }
 
 function setBadge(id, state) {
@@ -189,9 +209,10 @@ function checkAnswer() {
   const w = words[order[idx]];
   const rOk = norm(document.getElementById('reading-input').value) === norm(w.reading);
   const mOk = w.meanings.some(m => norm(m) === norm(document.getElementById('meaning-input').value));
-  setBadge('reading-badge', rOk ? 'correct' : 'wrong');
-  setBadge('meaning-badge', mOk ? 'correct' : 'wrong');
-  if (rOk && mOk) correct++; else wrong++;
+  const ok = mode === 'reading' ? rOk : mOk;
+  if (mode === 'reading') setBadge('reading-badge', rOk ? 'correct' : 'wrong');
+  else setBadge('meaning-badge', mOk ? 'correct' : 'wrong');
+  if (ok) correct++; else wrong++;
   document.getElementById('sc-correct').textContent = correct;
   document.getElementById('sc-wrong').textContent = wrong;
   document.getElementById('sc-remain').textContent = words.length - idx - 1;
