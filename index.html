@@ -122,6 +122,7 @@
     <div class="score-chip"><span class="num" id="sc-wrong">0</span><span class="lbl">오답</span></div>
     <div class="score-chip"><span class="num" id="sc-remain">10</span><span class="lbl">남은 문제</span></div>
   </div>
+  <div style="font-size:12px;color:#bbb;text-align:right;margin-bottom:8px;">JLPT N3 · な형용사 50단어</div>
 
   <div id="quiz-area">
     <div class="progress-text" id="progress-text">1 / 10</div>
@@ -158,16 +159,56 @@
 
 <script>
 const words = [
-  { kanji: "食べる", reading: "たべる", meanings: ["먹다"], pos: "동사" },
-  { kanji: "飲む", reading: "のむ", meanings: ["마시다"], pos: "동사" },
-  { kanji: "学校", reading: "がっこう", meanings: ["학교"], pos: "명사" },
-  { kanji: "先生", reading: "せんせい", meanings: ["선생님", "선생"], pos: "명사" },
-  { kanji: "友達", reading: "ともだち", meanings: ["친구"], pos: "명사" },
-  { kanji: "大きい", reading: "おおきい", meanings: ["크다", "크"], pos: "형용사" },
-  { kanji: "見る", reading: "みる", meanings: ["보다"], pos: "동사" },
-  { kanji: "時間", reading: "じかん", meanings: ["시간"], pos: "명사" },
-  { kanji: "難しい", reading: "むずかしい", meanings: ["어렵다", "어려운"], pos: "형용사" },
-  { kanji: "話す", reading: "はなす", meanings: ["말하다", "이야기하다"], pos: "동사" },
+  {"kanji":"安全","reading":"あんぜん","meanings":["안전하다"],"pos":"な형용사"},
+  {"kanji":"意外","reading":"いがい","meanings":["의외이다"],"pos":"な형용사"},
+  {"kanji":"一生懸命","reading":"いっしょうけんめい","meanings":["열심히","필사적이다"],"pos":"な형용사"},
+  {"kanji":"偉大","reading":"いだい","meanings":["위대하다"],"pos":"な형용사"},
+  {"kanji":"遠慮","reading":"えんりょ","meanings":["사양함","조심함"],"pos":"な형용사"},
+  {"kanji":"勝手","reading":"かって","meanings":["제멋대로임"],"pos":"な형용사"},
+  {"kanji":"簡単","reading":"かんたん","meanings":["간단하다"],"pos":"な형용사"},
+  {"kanji":"結構","reading":"けっこう","meanings":["훌륭하다","충분하다"],"pos":"な형용사"},
+  {"kanji":"国際的","reading":"こくさいてき","meanings":["국제적이다"],"pos":"な형용사"},
+  {"kanji":"複雑","reading":"ふくざつ","meanings":["복잡하다"],"pos":"な형용사"},
+  {"kanji":"積極的","reading":"せっきょくてき","meanings":["적극적이다"],"pos":"な형용사"},
+  {"kanji":"消極的","reading":"しょうきょくてき","meanings":["소극적이다"],"pos":"な형용사"},
+  {"kanji":"自由","reading":"じゆう","meanings":["자유롭다"],"pos":"な형용사"},
+  {"kanji":"大切","reading":"たいせつ","meanings":["중요하다","소중하다"],"pos":"な형용사"},
+  {"kanji":"得意","reading":"とくい","meanings":["능숙하다","자신있다"],"pos":"な형용사"},
+  {"kanji":"苦手","reading":"にがて","meanings":["서투르다","약하다"],"pos":"な형용사"},
+  {"kanji":"熱心","reading":"ねっしん","meanings":["열심이다"],"pos":"な형용사"},
+  {"kanji":"必要","reading":"ひつよう","meanings":["필요하다"],"pos":"な형용사"},
+  {"kanji":"正直","reading":"しょうじき","meanings":["정직하다","솔직하다"],"pos":"な형용사"},
+  {"kanji":"夢中","reading":"むちゅう","meanings":["열중함","몰두함"],"pos":"な형용사"},
+  {"kanji":"無駄","reading":"むだ","meanings":["소용없음","낭비이다"],"pos":"な형용사"},
+  {"kanji":"無理","reading":"むり","meanings":["무리이다","불가능하다"],"pos":"な형용사"},
+  {"kanji":"楽","reading":"らく","meanings":["편안하다","쉽다"],"pos":"な형용사"},
+  {"kanji":"真剣","reading":"しんけん","meanings":["진지하다"],"pos":"な형용사"},
+  {"kanji":"新鮮","reading":"しんせん","meanings":["신선하다"],"pos":"な형용사"},
+  {"kanji":"親切","reading":"しんせつ","meanings":["친절하다"],"pos":"な형용사"},
+  {"kanji":"丁寧","reading":"ていねい","meanings":["정중하다","공손하다"],"pos":"な형용사"},
+  {"kanji":"特別","reading":"とくべつ","meanings":["특별하다"],"pos":"な형용사"},
+  {"kanji":"突然","reading":"とつぜん","meanings":["갑작스럽다"],"pos":"な형용사"},
+  {"kanji":"普段","reading":"ふだん","meanings":["평소이다","보통이다"],"pos":"な형용사"},
+  {"kanji":"本気","reading":"ほんき","meanings":["진심이다"],"pos":"な형용사"},
+  {"kanji":"真面目","reading":"まじめ","meanings":["성실하다","진실하다"],"pos":"な형용사"},
+  {"kanji":"明確","reading":"めいかく","meanings":["명확하다"],"pos":"な형용사"},
+  {"kanji":"立派","reading":"りっぱ","meanings":["훌륭하다","뛰어나다"],"pos":"な형용사"},
+  {"kanji":"当然","reading":"とうぜん","meanings":["당연하다"],"pos":"な형용사"},
+  {"kanji":"普通","reading":"ふつう","meanings":["보통이다","일반적이다"],"pos":"な형용사"},
+  {"kanji":"完璧","reading":"かんぺき","meanings":["완벽하다"],"pos":"な형용사"},
+  {"kanji":"便利","reading":"べんり","meanings":["편리하다"],"pos":"な형용사"},
+  {"kanji":"不便","reading":"ふべん","meanings":["불편하다"],"pos":"な형용사"},
+  {"kanji":"様々","reading":"さまざま","meanings":["다양하다","여러 가지이다"],"pos":"な형용사"},
+  {"kanji":"純粋","reading":"じゅんすい","meanings":["순수하다"],"pos":"な형용사"},
+  {"kanji":"深刻","reading":"しんこく","meanings":["심각하다"],"pos":"な형용사"},
+  {"kanji":"平均","reading":"へいきん","meanings":["평균적이다"],"pos":"な형용사"},
+  {"kanji":"独特","reading":"どくとく","meanings":["독특하다"],"pos":"な형용사"},
+  {"kanji":"正確","reading":"せいかく","meanings":["정확하다"],"pos":"な형용사"},
+  {"kanji":"不明","reading":"ふめい","meanings":["불분명하다","알 수 없다"],"pos":"な형용사"},
+  {"kanji":"絶対","reading":"ぜったい","meanings":["절대적이다"],"pos":"な형용사"},
+  {"kanji":"様々","reading":"さまざま","meanings":["다양하다"],"pos":"な형용사"},
+  {"kanji":"純粋","reading":"じゅんすい","meanings":["순수하다"],"pos":"な형용사"},
+  {"kanji":"真剣","reading":"しんけん","meanings":["진지하다","진심이다"],"pos":"な형용사"},
 ];
 
 let order = [], idx = 0, correct = 0, wrong = 0;
