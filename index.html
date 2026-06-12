@@ -6,16 +6,8 @@
   <title>일본어 단어 퀴즈</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .container { width: 100%; max-width: 480px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .container { width: 100%; max-width: 500px; }
     h1 { font-size: 18px; font-weight: 500; color: #333; text-align: center; margin-bottom: 1.5rem; }
     .score-bar { display: flex; gap: 10px; margin-bottom: 1.25rem; }
     .score-chip { flex: 1; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 10px; text-align: center; }
@@ -24,7 +16,6 @@
     .progress-text { font-size: 13px; color: #aaa; text-align: right; margin-bottom: 6px; }
     .word-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 2.5rem 1.5rem; text-align: center; margin-bottom: 1.25rem; }
     .kanji { font-size: 52px; font-weight: 500; color: #111; line-height: 1.2; }
-    .pos { font-size: 13px; color: #bbb; margin-top: 8px; }
     .input-group { margin-bottom: 12px; }
     .input-label { font-size: 13px; color: #888; margin-bottom: 6px; display: block; }
     .input-row { display: flex; gap: 8px; align-items: center; }
@@ -39,15 +30,25 @@
     .btn-check:hover { background: #f5f5f5; }
     .btn-next { background: #f0f0f0; color: #222; display: none; }
     .btn-next:hover { background: #e8e8e8; }
-    .answer-reveal { background: #f9f9f9; border-radius: 10px; padding: 12px 16px; margin-top: 10px; font-size: 14px; color: #777; display: none; line-height: 1.8; }
-    .answer-reveal span { color: #222; font-weight: 500; }
+
+    .reveal { display: none; margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e5; }
+    .reveal-answer { background: #f9f9f9; padding: 12px 16px; font-size: 14px; color: #555; border-bottom: 1px solid #e5e5e5; }
+    .reveal-answer strong { color: #222; }
+    .reveal-components { background: #fff; padding: 12px 16px; }
+    .reveal-components-title { font-size: 12px; color: #aaa; margin-bottom: 10px; letter-spacing: 0.3px; }
+    .component-row { display: grid; grid-template-columns: 1fr 1.5fr 2fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: start; }
+    .component-row:last-child { border-bottom: none; }
+    .comp-kanji { font-size: 15px; font-weight: 500; color: #222; }
+    .comp-radical { font-size: 13px; color: #888; line-height: 1.5; }
+    .comp-principle { font-size: 13px; color: #555; line-height: 1.5; }
+
     .loading { text-align: center; padding: 3rem 0; color: #999; font-size: 15px; }
     .error-msg { text-align: center; padding: 2rem; background: #fdecea; border-radius: 12px; color: #c62828; font-size: 14px; line-height: 1.7; }
     .meta-info { font-size: 12px; color: #bbb; text-align: right; margin-bottom: 8px; }
     .finish-msg { text-align: center; padding: 2rem 0; }
     .finish-msg .big { font-size: 42px; margin-bottom: 12px; }
     .finish-msg .result { font-size: 20px; font-weight: 500; color: #222; margin-bottom: 6px; }
-    .finish-msg .sub { font-size: 14px; color: #999; }
+    .finish-msg .sub { font-size: 14px; color: #999; margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>
@@ -63,16 +64,38 @@ let words = [], order = [], idx = 0, correct = 0, wrong = 0;
 
 function norm(s) { return s.trim().replace(/\s+/g, ''); }
 
+function parseCSVLine(line) {
+  const cols = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().split('\n').map(l => l.replace(/\r$/, ''));
   const result = [];
+  let current = null;
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+    const cols = parseCSVLine(lines[i]);
     const kanji = cols[0] || '';
     const reading = cols[1] || '';
     const meaning = cols[2] || '';
+    const compKanji = cols[3] || '';
+    const radical = cols[4] || '';
+    const principle = cols[5] || '';
+
     if (kanji && reading && meaning) {
-      result.push({ kanji, reading, meanings: meaning.split('/').map(m => m.trim()), pos: '' });
+      current = { kanji, reading, meanings: meaning.split('/').map(m => m.trim()), components: [] };
+      if (compKanji) current.components.push({ kanji: compKanji, radical, principle });
+      result.push(current);
+    } else if (!kanji && current && compKanji) {
+      current.components.push({ kanji: compKanji, radical, principle });
     }
   }
   return result;
@@ -84,15 +107,10 @@ async function loadWords() {
     if (!res.ok) throw new Error('시트를 불러올 수 없어요 (HTTP ' + res.status + ')');
     const text = await res.text();
     words = parseCSV(text);
-    if (words.length === 0) throw new Error('단어 데이터가 없어요. 시트 형식을 확인해 주세요.');
+    if (words.length === 0) throw new Error('단어 데이터가 없어요.');
     renderQuiz();
   } catch (e) {
-    document.getElementById('app').innerHTML = `
-      <div class="error-msg">
-        ⚠️ ${e.message}<br><br>
-        시트 공개 설정이 필요해요:<br>
-        <strong>파일 → 웹에 게시 → CSV → 게시</strong>
-      </div>`;
+    document.getElementById('app').innerHTML = `<div class="error-msg">⚠️ ${e.message}<br><br>시트 설정: <strong>파일 → 웹에 게시 → CSV → 게시</strong></div>`;
   }
 }
 
@@ -116,7 +134,6 @@ function renderQuiz() {
     <div class="progress-text" id="progress-text">1 / ${words.length}</div>
     <div class="word-card">
       <div class="kanji" id="kanji-display"></div>
-      <div class="pos" id="pos-display"></div>
     </div>
     <div class="input-group">
       <label class="input-label" for="reading-input">읽는 방법 (히라가나)</label>
@@ -134,7 +151,7 @@ function renderQuiz() {
     </div>
     <button class="btn btn-check" id="btn-check" onclick="checkAnswer()">정답 확인</button>
     <button class="btn btn-next" id="btn-next" onclick="nextWord()">다음 단어 →</button>
-    <div class="answer-reveal" id="answer-reveal"></div>
+    <div class="reveal" id="reveal"></div>
     <div class="finish-msg" id="finish-area" style="display:none"></div>
   `;
   order = shuffle(words.map((_, i) => i));
@@ -147,7 +164,6 @@ function renderQuiz() {
 function showWord() {
   const w = words[order[idx]];
   document.getElementById('kanji-display').textContent = w.kanji;
-  document.getElementById('pos-display').textContent = w.pos;
   document.getElementById('progress-text').textContent = (idx + 1) + ' / ' + words.length;
   document.getElementById('reading-input').value = '';
   document.getElementById('meaning-input').value = '';
@@ -155,7 +171,8 @@ function showWord() {
   document.getElementById('meaning-input').disabled = false;
   document.getElementById('reading-badge').className = 'badge';
   document.getElementById('meaning-badge').className = 'badge';
-  document.getElementById('answer-reveal').style.display = 'none';
+  document.getElementById('reveal').style.display = 'none';
+  document.getElementById('reveal').innerHTML = '';
   document.getElementById('btn-check').style.display = 'block';
   document.getElementById('btn-next').style.display = 'none';
   document.getElementById('reading-input').focus();
@@ -178,8 +195,25 @@ function checkAnswer() {
   document.getElementById('sc-correct').textContent = correct;
   document.getElementById('sc-wrong').textContent = wrong;
   document.getElementById('sc-remain').textContent = words.length - idx - 1;
-  const reveal = document.getElementById('answer-reveal');
-  reveal.innerHTML = '정답: <span>' + w.reading + '</span> — <span>' + w.meanings.join(', ') + '</span>';
+
+  let compHTML = '';
+  if (w.components && w.components.length > 0) {
+    compHTML = `
+      <div class="reveal-components">
+        <div class="reveal-components-title">구성 한자</div>
+        ${w.components.map(c => `
+          <div class="component-row">
+            <div class="comp-kanji">${c.kanji}</div>
+            <div class="comp-radical">${c.radical}</div>
+            <div class="comp-principle">${c.principle}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  const reveal = document.getElementById('reveal');
+  reveal.innerHTML = `
+    <div class="reveal-answer">정답: <strong>${w.reading}</strong> — <strong>${w.meanings.join(', ')}</strong></div>
+    ${compHTML}`;
   reveal.style.display = 'block';
   document.getElementById('btn-check').style.display = 'none';
   document.getElementById('btn-next').style.display = 'block';
@@ -194,14 +228,14 @@ function nextWord() {
     document.getElementById('finish-area').innerHTML =
       '<div class="big">' + (pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '📚') + '</div>' +
       '<div class="result">' + correct + ' / ' + words.length + ' 정답</div>' +
-      '<div class="sub" style="margin-bottom:1.5rem">정답률 ' + pct + '%</div>' +
+      '<div class="sub">정답률 ' + pct + '%</div>' +
       '<button class="btn btn-check" onclick="renderQuiz()">다시 시작</button>';
     document.getElementById('finish-area').style.display = 'block';
     document.querySelector('.word-card').style.display = 'none';
     document.querySelectorAll('.input-group').forEach(el => el.style.display = 'none');
     document.getElementById('btn-check').style.display = 'none';
     document.getElementById('btn-next').style.display = 'none';
-    document.getElementById('answer-reveal').style.display = 'none';
+    document.getElementById('reveal').style.display = 'none';
     return;
   }
   showWord();
