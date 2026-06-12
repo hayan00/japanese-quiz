@@ -36,11 +36,14 @@
     .reveal-answer strong { color: #222; }
     .reveal-components { background: #fff; padding: 12px 16px; }
     .reveal-components-title { font-size: 12px; color: #aaa; margin-bottom: 10px; letter-spacing: 0.3px; }
-    .component-row { display: grid; grid-template-columns: 1fr 1.5fr 2fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: start; }
+    .component-row { display: grid; grid-template-columns: auto 1fr 1.5fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: start; }
     .component-row:last-child { border-bottom: none; }
-    .comp-kanji { font-size: 15px; font-weight: 500; color: #222; }
+    .comp-kanji { font-size: 15px; font-weight: 500; color: #222; min-width: 80px; }
+    .comp-reading { display: flex; flex-wrap: wrap; gap: 4px; }
+    .reading-tag { font-size: 12px; padding: 2px 7px; border-radius: 6px; }
+    .reading-tag.on  { background: #e8f0fe; color: #1a56db; }
+    .reading-tag.kun { background: #fef3c7; color: #92400e; }
     .comp-radical { font-size: 13px; color: #888; line-height: 1.5; }
-    .comp-principle { font-size: 13px; color: #555; line-height: 1.5; }
 
     .loading { text-align: center; padding: 3rem 0; color: #999; font-size: 15px; }
     .error-msg { text-align: center; padding: 2rem; background: #fdecea; border-radius: 12px; color: #c62828; font-size: 14px; line-height: 1.7; }
@@ -84,23 +87,34 @@ function parseCSVLine(line) {
 
 function parseCSV(text) {
   const lines = text.trim().split('\n').map(l => l.replace(/\r$/, ''));
+  const headers = parseCSVLine(lines[0]);
+  const idx = {
+    kanji:    headers.findIndex(h => h === '단어'),
+    reading:  headers.findIndex(h => h === '히라가나'),
+    meaning:  headers.findIndex(h => h === '뜻'),
+    compK:    headers.findIndex(h => h.includes('구성 한자')),
+    on:       headers.findIndex(h => h.includes('음독')),
+    kun:      headers.findIndex(h => h.includes('훈독')),
+    radical:  headers.findIndex(h => h.includes('부수')),
+  };
   const result = [];
   let current = null;
   for (let i = 1; i < lines.length; i++) {
-    const cols = parseCSVLine(lines[i]);
-    const kanji = cols[0] || '';
-    const reading = cols[1] || '';
-    const meaning = cols[2] || '';
-    const compKanji = cols[3] || '';
-    const radical = cols[4] || '';
-    const principle = cols[5] || '';
+    const c = parseCSVLine(lines[i]);
+    const kanji   = idx.kanji   >= 0 ? c[idx.kanji]   || '' : '';
+    const reading = idx.reading >= 0 ? c[idx.reading]  || '' : '';
+    const meaning = idx.meaning >= 0 ? c[idx.meaning]  || '' : '';
+    const compK   = idx.compK   >= 0 ? c[idx.compK]    || '' : '';
+    const on      = idx.on      >= 0 ? c[idx.on]       || '' : '';
+    const kun     = idx.kun     >= 0 ? c[idx.kun]      || '' : '';
+    const radical = idx.radical >= 0 ? c[idx.radical]  || '' : '';
 
     if (kanji && reading && meaning) {
       current = { kanji, reading, meanings: meaning.split('/').map(m => m.trim()), components: [] };
-      if (compKanji) current.components.push({ kanji: compKanji, radical, principle });
+      if (compK) current.components.push({ kanji: compK, on, kun, radical });
       result.push(current);
-    } else if (!kanji && current && compKanji) {
-      current.components.push({ kanji: compKanji, radical, principle });
+    } else if (!kanji && current && compK) {
+      current.components.push({ kanji: compK, on, kun, radical });
     }
   }
   return result;
@@ -234,8 +248,11 @@ function checkAnswer() {
         ${w.components.map(c => `
           <div class="component-row">
             <div class="comp-kanji">${c.kanji}</div>
+            <div class="comp-reading">
+              ${c.on  ? '<span class="reading-tag on">음독 ' + c.on  + '</span>' : ''}
+              ${c.kun ? '<span class="reading-tag kun">훈독 ' + c.kun + '</span>' : ''}
+            </div>
             <div class="comp-radical">${c.radical}</div>
-            <div class="comp-principle">${c.principle}</div>
           </div>`).join('')}
       </div>`;
   }
